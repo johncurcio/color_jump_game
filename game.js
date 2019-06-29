@@ -1,6 +1,4 @@
 let game;
-let score = 0;
-let scoreText = "";
  
 // global game options
 let gameOptions = {
@@ -45,6 +43,7 @@ window.onload = function() {
 }
  
 class playGame extends Phaser.Scene {
+
     constructor(){
         super("PlayGame");
     }
@@ -56,6 +55,9 @@ class playGame extends Phaser.Scene {
     }
 
     create(){
+        var score = 0;
+        var scoreText = "";
+
         this.leftWalls = [];
         this.rightWalls = [];
  
@@ -92,6 +94,7 @@ class playGame extends Phaser.Scene {
  
         // waiting for pointer down input to call "jump" method
         this.input.on("pointerdown", this.jump, this);
+        this.input.keyboard.on("keydown-SPACE", this.jump, this);
  
         // waiting for a "collisionstart" event. "e" is the event, "b1" and "b2" the bodies
         this.matter.world.on("collisionstart", function (e, b1, b2) {
@@ -116,6 +119,7 @@ class playGame extends Phaser.Scene {
         this.paintWalls(this.rightWalls);
 
         scoreText = this.add.text(48, 16, 'Score: 0', { fontSize: '32px', fill: '#fff' });
+        
     }
  
     addWall(wallNumber, side){
@@ -177,7 +181,7 @@ class playGame extends Phaser.Scene {
     update(){
         var offset = 50;
         this.ball.setVelocity((this.ball.body.velocity.x > 0) ? gameOptions.ballSpeed : -gameOptions.ballSpeed, this.ball.body.velocity.y);
- 
+
         // if the ball flies off the screen...
         if(this.ball.y < -offset || this.ball.y > game.config.height + offset){
  
