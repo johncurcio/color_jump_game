@@ -1,4 +1,6 @@
 let game;
+let score = 0;
+let scoreText = "";
  
 // global game options
 let gameOptions = {
@@ -50,12 +52,10 @@ class playGame extends Phaser.Scene {
     preload(){
         this.load.image("wall", "assets/wall.png");
         this.load.image("ball", "assets/ball.png");
-        this.load.image("coin", "assets/coin.png");
+        this.load.spritesheet("coin", "assets/coin_sprite.png", { frameWidth: 50, frameHeight: 50 } );
     }
- 
-    create(){
- 		game.scene.pause();
 
+    create(){
         this.leftWalls = [];
         this.rightWalls = [];
  
@@ -68,12 +68,21 @@ class playGame extends Phaser.Scene {
         this.ball.setCircle()
  
         // adding the coin, no matter where, we'll set its position later
-        this.coin = this.matter.add.image(0, 0, "coin");
+        this.coin = this.matter.add.sprite(0, 0, "coin");
         this.coin.setCircle();
         this.coin.setStatic(true);
         // setting coin body as sensor. Will fire collision events without actually collide
         this.coin.body.isSensor = true;
-        this.coin.body.label = "coin"
+        this.coin.body.label = "coin";
+
+        var coinsAnimation = this.anims.create({
+            key: 'spin',
+            frames: this.anims.generateFrameNumbers('coin'),
+            frameRate: 16,
+            repeat: -1
+        });
+
+        this.coin.play('spin');
  
         // this method will randomly place the coin
         this.placeCoin();
@@ -95,75 +104,56 @@ class playGame extends Phaser.Scene {
             }
  
             if(b1.label == "coin" || b2.label == "coin"){
+                // update score
+                score += 10;
+                scoreText.setText('Score: ' + score);
+                // add new coin
                 this.placeCoin();
             }
         }, this);
 
         this.paintWalls(this.leftWalls);
         this.paintWalls(this.rightWalls);
+
+        scoreText = this.add.text(48, 16, 'Score: 0', { fontSize: '32px', fill: '#fff' });
     }
  
     addWall(wallNumber, side){
- 
         // getting "wall" preloaded image
         let wallTexture = this.textures.get("wall");
- 
-        // determining wall height according to game height and the number of bars
         let wallHeight = game.config.height / gameOptions.bars;
- 
-        // determining wall x position
         let wallX = side * game.config.width + wallTexture.source[0].width / 2 - wallTexture.source[0].width * side;
- 
-        // determining wall y position
         let wallY = wallHeight * wallNumber + wallHeight / 2;
  
         // adding the wall
         let wall = this.matter.add.image(wallX, wallY, "wall");
- 
-        // the wall is static
         wall.setStatic(true);
- 
-        // giving the wall the proper label
         wall.body.label = (side == RIGHT) ? "rightwall" : "leftwall"
- 
-        // setting wall height
         wall.displayHeight = wallHeight;
- 
-        // returning the wall object
         return wall
     }
  
     placeCoin(){
- 
-        // just placing the coin in a random position between 20% and 80% of the game size
         this.coin.x = Phaser.Math.Between(game.config.width * 0.2, game.config.width * 0.8);
         this.coin.y = Phaser.Math.Between(game.config.height * 0.2, game.config.height * 0.8);
     }
  
-    // method to handle ball Vs wall collision
     handleWallCollision(side, bodyA, bodyB){
  
-        // if the ball and the wall have different colors...
         if(bodyA.color != bodyB.color){
  
             // restart the game
             this.scene.start("PlayGame");
         }
  
-        // calling a method to paint the walls
         this.paintWalls((side == LEFT) ? this.rightWalls : this.leftWalls);
- 
-        // updating ball velocity
         this.ball.setVelocity(gameOptions.ballSpeed, this.ball.body.velocity.y);
     }
  
     // method to paint the walls, in the argument the array of walls
     paintWalls(walls){
- 
-        // looping through all walls
         walls.forEach(function(wall){
  
-            // picking a random color
             let color = Phaser.Math.RND.pick(gameOptions.barColors);
  
             // tinting the wall
@@ -173,31 +163,23 @@ class playGame extends Phaser.Scene {
             wall.body.color = color;
         });
  
-        // picking a random wall
         let randomWall = Phaser.Math.RND.pick(walls);
- 
-        // painting the ball with the same color used by the random wall
         this.ball.setTint(randomWall.body.color);
- 
-        // also assigning the ball body a custom "color" property
         this.ball.body.color = randomWall.body.color;
     }
  
     // method to jump
     jump(){
- 
-        // setting new ball velocity
         this.ball.setVelocity((this.ball.body.velocity.x > 0) ? gameOptions.ballSpeed : -gameOptions.ballSpeed, -gameOptions.jumpForce);
     }
  
     // method to be called at each frame
     update(){
- 
-        // updating ball velocity
+        var offset = 50;
         this.ball.setVelocity((this.ball.body.velocity.x > 0) ? gameOptions.ballSpeed : -gameOptions.ballSpeed, this.ball.body.velocity.y);
  
         // if the ball flies off the screen...
-        if(this.ball.y < 0 || this.ball.y > game.config.height){
+        if(this.ball.y < -offset || this.ball.y > game.config.height + offset){
  
             // restart the game
             this.scene.start("PlayGame");
