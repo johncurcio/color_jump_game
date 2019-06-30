@@ -19,7 +19,7 @@ window.onload = function() {
         width: 750,
         height: 1334,
         backgroundColor: 0x181818,//0xFFF8F0,
-        scene: playGame,
+        scene: [ playGame, pauseGame ],
  
         physics: {
             default: "matter",
@@ -41,6 +41,27 @@ window.onload = function() {
     resize();
     window.addEventListener("resize", resize, false);
 }
+
+class pauseGame extends Phaser.Scene {
+    constructor(){
+        super("PauseGame");
+    }
+
+    preload(){}
+
+    create(){
+        var text = this.add.text(250, 300, 'Click to START', { fontSize: '32px', fill: '#fff' });
+        this.input.on('pointerdown', function () {
+
+            text.destroy();
+            this.scene.resume('PlayGame');
+
+        }, this);
+
+    }
+
+    update(){}
+}
  
 class playGame extends Phaser.Scene {
 
@@ -57,9 +78,12 @@ class playGame extends Phaser.Scene {
     create(){
         var score = 0;
         var scoreText = "";
-
+        
         this.leftWalls = [];
         this.rightWalls = [];
+
+        this.scene.pause();
+        this.scene.launch('PauseGame');
  
         for(let i = 0; i < gameOptions.bars; i++){
             this.leftWalls[i] = this.addWall(i, LEFT);
@@ -149,7 +173,7 @@ class playGame extends Phaser.Scene {
             // restart the game
             this.scene.start("PlayGame");
         }
- 
+        
         this.paintWalls((side == LEFT) ? this.rightWalls : this.leftWalls);
         this.ball.setVelocity(gameOptions.ballSpeed, this.ball.body.velocity.y);
     }
